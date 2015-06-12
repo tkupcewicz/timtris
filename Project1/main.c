@@ -7,7 +7,7 @@
 #include "block.h"
 
 
-Element **mainMatrix;
+Element ***mainMatrix;
 
 static int block_data[7][4] = {
 	{ 0xF00, 0x2222, 0xF00, 0x2222 }, // I
@@ -36,28 +36,19 @@ bool is_collision(Element *element, int dx, int dy){
 		m = 1;
 		for (j = element->x - 2; j <= element->x + 1; j++){
 			if (block_data[element->type][element->dir] & 1 << k * 4 - m){
-				//printf("1");
-				if (mainMatrix[i + dy][j + dx].is_locked == 1){
+				if (mainMatrix[i + dy][j + dx]->is_locked == 1){
 					//printf("%d %d is locked\n", i + dy, j + dx);
 					return true;
 				}
 			}
-			//else printf("0");
 			m++;
 		}
-		//printf("\n");
 		k--;
 	}
 	return false;
 } 
 
 void moveBrick(Element *activeBlock, int dx, int dy){
-	int col = mainMatrix[activeBlock->y][activeBlock->x].color;
-	mainMatrix[activeBlock->y][activeBlock->x].color = 0;
-	mainMatrix[activeBlock->y][activeBlock->x].is_locked = 0;
-	mainMatrix[activeBlock->y + dy][activeBlock->x + dx].color = col;
-	mainMatrix[activeBlock->y + dy][activeBlock->x + dx].is_locked = 0;
-	activeBlock->color = col;
 	activeBlock->x = activeBlock->x + dx;
 	activeBlock->y = activeBlock->y + dy;
 }
@@ -68,20 +59,20 @@ int checkForLines(){
 	for (i = 19; i >= 0; i--){
 		brickCounter = 0;
 		for (j = 1; j <= 10; j++){
-			if (mainMatrix[i][j].is_locked == 1){
+			if (mainMatrix[i][j]->is_locked == 1){
 				brickCounter++;
 			}
 		}
 		if (brickCounter == 10){
 			for (j = 1; j <= 10; j++){
-				mainMatrix[i][j].is_locked = 0;
-				mainMatrix[i][j].color = 0;
+				mainMatrix[i][j]->is_locked = 0;
+				mainMatrix[i][j]->color = 0;
 			}
 			lineCounter++;
 			for (k = i; k >= 1; k--){
 				for (m = 1; m <= 10; m++){
-					mainMatrix[k][m].color = mainMatrix[k - 1][m].color;
-					mainMatrix[k][m].is_locked = mainMatrix[k - 1][m].is_locked;
+					mainMatrix[k][m]->color = mainMatrix[k - 1][m]->color;
+					mainMatrix[k][m]->is_locked = mainMatrix[k - 1][m]->is_locked;
 				}
 			}
 			i++;
@@ -93,14 +84,13 @@ int checkForLines(){
 
 Element  *generateBrick(){
 	Element * tmp;
-	mainMatrix[1][5].type = rand() % 7;
-	mainMatrix[1][5].color = mainMatrix[1][5].type  + 1;
-	//printf("%d", mainMatrix[1][5].color);
-	mainMatrix[1][5].dir = rand() % 4;
-	mainMatrix[1][5].is_locked = 0;
-	mainMatrix[1][5].x = 5;
-	mainMatrix[1][5].y = 1;
-	tmp = &mainMatrix[1][5];
+	tmp = malloc(sizeof(Element));
+	tmp->x = 5;
+	tmp->y = 1;
+	tmp->type = rand() % 7;
+	tmp->color = tmp->type + 1;
+	tmp->dir = rand() % 4;
+	tmp->is_locked = 0;
 	return tmp;
 }
 
@@ -169,33 +159,25 @@ int main(int argc, char **argv)
 	clock_t last_time = this_time;
 
 	int i, j;
-	mainMatrix = (Element**)calloc(21, sizeof(Element*));
+	mainMatrix = (Element***)calloc(21, sizeof(Element**));
 	for (i = 0; i < 21; i++){
-		mainMatrix[i] = (Element*)calloc(12, sizeof(Element));
+		mainMatrix[i] = (Element**)calloc(12, sizeof(Element*));
+	}
+	for (i = 0; i < 21; i++){
+		for (j = 0; j < 12; j++){
+			mainMatrix[i][j] = (Element*)calloc(1, sizeof(Element));
+		}
 	}
 	for (i = 0; i < 21; i++){
 		for (j = 0; j < 12; j++){
 			if ((i == 20) || (j == 0 || j == 11)){
-				mainMatrix[i][j].color = -1;
-				mainMatrix[i][j].is_locked = 1;
-				mainMatrix[i][j].x = j;
-				mainMatrix[i][j].y = i;
+				mainMatrix[i][j]->color = -1;
+				mainMatrix[i][j]->is_locked = 1;
+				mainMatrix[i][j]->x = j;
+				mainMatrix[i][j]->y = i;
 			}
 		}
 	}
-	/*int k, m;
-	for (i = 0; i < 7; i++){
-		for (j = 0; j < 4; j++){
-			for (k = 4; k > 0; k--){
-				for (m = 1; m <= 4; m++){
-					if (block_data[i][j] & 1 << k * 4 - m) printf("1 ");
-					else printf("0 ");
-				}
-				printf("\n");
-			}
-			printf("\n");
-		}
-	}*/
 
 
 	activeBlock = generateBrick();
@@ -239,7 +221,7 @@ int main(int argc, char **argv)
 
 
 		if (downKeyDown) NUM_SECONDS = 0.1;
-		else NUM_SECONDS = 0.5;
+		else NUM_SECONDS = 1;
 		this_time = clock();
 		time_counter += (double)(this_time - last_time);
 		last_time = this_time;
@@ -247,8 +229,9 @@ int main(int argc, char **argv)
 		if (time_counter > (double)(NUM_SECONDS * CLOCKS_PER_SEC))
 		{
 			time_counter -= (double)(NUM_SECONDS * CLOCKS_PER_SEC);
-
+			printf("Now\n");
 			if (!is_collision(activeBlock, 0, 1)){
+				printf("X: %d Y: %d", activeBlock->x, activeBlock->y);
 				moveBrick(activeBlock, 0, 1);
 			}
 			else{
@@ -257,8 +240,8 @@ int main(int argc, char **argv)
 					m = 1;
 					for (j = activeBlock->x - 2; j <= activeBlock->x + 1; j++){
 						if (block_data[activeBlock->type][activeBlock->dir] & 1 << k * 4 - m){
-							mainMatrix[i][j].is_locked = 1;
-							mainMatrix[i][j].color = activeBlock->color;
+							mainMatrix[i][j]->is_locked = 1;
+							mainMatrix[i][j]->color = activeBlock->color;
 						}
 						m++;
 					}
@@ -279,7 +262,7 @@ int main(int argc, char **argv)
 		al_clear_to_color(al_map_rgb(0, 0, 0));
 		for (i = 0; i < 21; i++){
 			for (j = 0; j < 12; j++){
-				switch (mainMatrix[i][j].color){
+				switch (mainMatrix[i][j]->color){
 				case 1:  al_draw_bitmap(brick_purple, j * 32, i * 32, 0); break;
 				case 2:  al_draw_bitmap(brick_pink, j * 32, i * 32, 0); break;
 				case 3:  al_draw_bitmap(brick_blue, j * 32, i * 32, 0); break;
