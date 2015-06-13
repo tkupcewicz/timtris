@@ -146,6 +146,7 @@ int main(int argc, char **argv)
 				if ((is_collision(activeBlock, 0, 0, mainMatrix)) || (is_collision(activeBlock, 0, 0, mainMatrix))) activeBlock->dir = x;
 				break;
 			case ALLEGRO_KEY_DOWN:
+				time_counter = 0.05;
 				downKeyDown = true;
 			}
 		}
@@ -157,8 +158,8 @@ int main(int argc, char **argv)
 		}
 
 
-		if (downKeyDown) NUM_SECONDS = 0.1;
-		else NUM_SECONDS = 1;
+		if (downKeyDown) NUM_SECONDS = 0.05;
+		else NUM_SECONDS = 0.5;
 		this_time = clock();
 		time_counter += (double)(this_time - last_time);
 		last_time = this_time;
