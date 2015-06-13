@@ -6,31 +6,10 @@
 #include <stdbool.h>
 #include "block.h"
 #include "playfield.h"
+#include "colors.h"
 
+//glowna macierz gry
 Element ***mainMatrix;
-extern int block_data[7][4];
-
-
-/*
-bool is_collision(Element *element, int dx, int dy){
-	int k, m, i, j;
-	k = 4;
-	for (i = element->y - 1; i <= element->y + 2; i++){
-		m = 1;
-		for (j = element->x - 2; j <= element->x + 1; j++){
-			if (block_data[element->type][element->dir] & 1 << ((k * 4) - m)){
-				if (mainMatrix[i + dy][j + dx]->is_locked == 1){
-					//printf("%d %d is locked\n", i + dy, j + dx);
-					return true;
-				}
-			}
-			m++;
-		}
-		k--;
-	}
-	return false;
-}
-*/
 
 enum MYKEYS {
 	KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT
@@ -38,12 +17,13 @@ enum MYKEYS {
 
 int main(int argc, char **argv)
 {	
+	FILE *fp;
+	fopen_s(&fp, "config.txt", "w+");
+	fclose(fp);
 	float NUM_SECONDS = 0.5;
 	srand(time(NULL));
 	ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 	ALLEGRO_DISPLAY *display = NULL;
-	ALLEGRO_BITMAP *brick_grey = NULL, *brick_purple = NULL, *brick_pink = NULL, *brick_blue = NULL, *brick_yellow = NULL, *brick_red = NULL, *brick_green = NULL, *brick_orange = NULL;
-	
 	
 	if (!al_init()) {
 		fprintf(stderr, "Failed to initialize allegro!\n");
@@ -75,21 +55,11 @@ int main(int argc, char **argv)
 	al_register_event_source(event_queue, al_get_display_event_source(display));
 	al_register_event_source(event_queue, al_get_keyboard_event_source());
 
-	brick_grey = al_load_bitmap("brick_grey.png");
-	brick_purple = al_load_bitmap("brick_purple.png");
-	brick_pink = al_load_bitmap("brick_pink.png");
-	brick_blue = al_load_bitmap("brick_blue.png");
-	brick_yellow = al_load_bitmap("brick_yellow.png");
-	brick_red = al_load_bitmap("brick_red.png");
-	brick_green = al_load_bitmap("brick_green.png");
-	brick_orange = al_load_bitmap("brick_orange.png");
-
-	if (!brick_grey || !brick_purple || !brick_pink || !brick_blue || !brick_yellow || !brick_red || !brick_green || !brick_orange) {
-		fprintf(stderr, "failed to load one of brick images!\n");
+	//Ladowanie bitmap
+	if (loadBitmaps() == false){
 		al_destroy_display(display);
 		return 0;
 	}
-
 
 	Element *activeBlock;
 	double time_counter = 0;
@@ -98,6 +68,9 @@ int main(int argc, char **argv)
 	clock_t last_time = this_time;
 
 	int i, j;
+
+	//Alokowanie pamieci na tablice
+
 	mainMatrix = (Element***)calloc(21, sizeof(Element**));
 	for (i = 0; i < 21; i++){
 		mainMatrix[i] = (Element**)calloc(12, sizeof(Element*));
@@ -125,26 +98,42 @@ int main(int argc, char **argv)
 	bool rightKeyDown = false;
 	int keyDelay = 10;
 	int x, k, m, test;
+
+	// G³ówna pêtla gry
+
 	while (true){
+
+		// Pobieranie informacji o wcisnietych klawiszach
+
 		ALLEGRO_EVENT ev;
 		al_get_next_event(event_queue, &ev);
 		if (ev.type == ALLEGRO_EVENT_KEY_DOWN){
 			switch (ev.keyboard.keycode){
+
+			//Strzalka w lewo
 			case ALLEGRO_KEY_LEFT:
 				if (!is_collision(activeBlock, -1, 0, mainMatrix)){
 					moveBlock(activeBlock, -1, 0);
 				}
 				break;
+
+			//Strzalka w prawo
 			case ALLEGRO_KEY_RIGHT:
 				if (!is_collision(activeBlock, 1, 0, mainMatrix)){
 					moveBlock(activeBlock, 1, 0);
 				}
 				break;
+
+			//Strzalka w gore - obracanie klocka
 			case ALLEGRO_KEY_UP:
 				x = activeBlock->dir;
+				//zmiana kierunku
 				activeBlock->dir = (x + 1) % 4;
-				if ((is_collision(activeBlock, 0, 0, mainMatrix)) || (is_collision(activeBlock, 0, 0, mainMatrix))) activeBlock->dir = x;
+				//jesli powstala kolizja - powrot do stanu wczesniejszego
+				if (is_collision(activeBlock, 0, 0, mainMatrix)) activeBlock->dir = x;
 				break;
+			
+			//Strzalka w dol - zmiana zmiennej downKeyDown na stan prawdziwy
 			case ALLEGRO_KEY_DOWN:
 				time_counter = 0.05;
 				downKeyDown = true;
@@ -152,24 +141,28 @@ int main(int argc, char **argv)
 		}
 		else if (ev.type == ALLEGRO_EVENT_KEY_UP){
 			switch (ev.keyboard.keycode){
+
+			//Strzalka w dol - zmiana zmiennej downKeyDown na stan falszywy
 			case ALLEGRO_KEY_DOWN:
 				downKeyDown = false;
 			}
 		}
 
-
+		//Jesli strzalka w dol jest wcisnieta to klocek porusza sie co 0.05sek, w przeciwnym wypadku 0.5s
 		if (downKeyDown) NUM_SECONDS = 0.05;
 		else NUM_SECONDS = 0.5;
 		this_time = clock();
 		time_counter += (double)(this_time - last_time);
 		last_time = this_time;
-
+		//Warunek wykonuj¹cy siê co czas okreœlony w NUM_SECONDS
 		if (time_counter > (double)(NUM_SECONDS * CLOCKS_PER_SEC))
 		{
 			time_counter -= (double)(NUM_SECONDS * CLOCKS_PER_SEC);
+			//Jesli nie ma kolizji miedzy aktywnym klockiem, w dolnym kierunku przesuwa go
 			if (!is_collision(activeBlock, 0, 1, mainMatrix)){
 				moveBlock(activeBlock, 0, 1);
 			}
+			//Jesli kolizja jest, blokuje go, i tworzy nowy klocek. Jesli w momencie stworzenia nowego klocka wystepuje kolizja oznacza to koniec gry
 			else{
 				lockBlock(activeBlock, mainMatrix);
 				downKeyDown = false;
@@ -180,45 +173,12 @@ int main(int argc, char **argv)
 				}
 			}
 		}
-
+		//Czysci wyswietlacz na czarno
 		al_clear_to_color(al_map_rgb(0, 0, 0));
-		for (i = 0; i < 21; i++){
-			for (j = 0; j < 12; j++){
-				switch (mainMatrix[i][j]->color){
-				case 1:  al_draw_bitmap(brick_purple, j * 32, i * 32, 0); break;
-				case 2:  al_draw_bitmap(brick_pink, j * 32, i * 32, 0); break;
-				case 3:  al_draw_bitmap(brick_blue, j * 32, i * 32, 0); break;
-				case 4:  al_draw_bitmap(brick_yellow, j * 32, i * 32, 0); break;
-				case 5:  al_draw_bitmap(brick_red, j * 32, i * 32, 0); break;
-				case 6:  al_draw_bitmap(brick_green, j * 32, i * 32, 0); break;
-				case 7:  al_draw_bitmap(brick_orange, j * 32, i * 32, 0); break;
-				case -1:  al_draw_bitmap(brick_grey, j * 32, i * 32, 0); break;
-				}
-			}
-		}
-		bool test = false;
-
-		k = 4;
-		for (i = activeBlock->y - 1; i <= activeBlock->y + 2; i++){
-			m = 1;
-			for (j = activeBlock->x - 2; j <= activeBlock->x + 1; j++){
-				if (block_data[activeBlock->type][activeBlock->dir] & 1 << ((k * 4) - m)){
-					switch (activeBlock->color){
-					case 1:  al_draw_bitmap(brick_purple, j * 32, i * 32, 0); break;
-					case 2:  al_draw_bitmap(brick_pink, j * 32, i * 32, 0); break;
-					case 3:  al_draw_bitmap(brick_blue, j * 32, i * 32, 0); break;
-					case 4:  al_draw_bitmap(brick_yellow, j * 32, i * 32, 0); break;
-					case 5:  al_draw_bitmap(brick_red, j * 32, i * 32, 0); break;
-					case 6:  al_draw_bitmap(brick_green, j * 32, i * 32, 0); break;
-					case 7:  al_draw_bitmap(brick_orange, j * 32, i * 32, 0); break;
-					}
-				}
-				m++;
-			}
-			k--;
-		}
-
-		void drawBlock(activeBlock, mainMatrix);
+		//Rysuje cala macierz
+		drawPlayfield(mainMatrix);
+		//Dorysowuje aktywny klocek
+		drawActiveBlock(activeBlock);
 		
 		al_flip_display();
 	}

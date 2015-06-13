@@ -63,25 +63,3 @@ void lockBlock(Element *activeBlock, Element ***tab){
 	}
 }
 
-/*void drawBlock(Element *activeBlock, Element ***tab){
-	int i, j, k, m;
-	k = 4;
-	for (i = activeBlock->y - 1; i <= activeBlock->y + 2; i++){
-		m = 1;
-		for (j = activeBlock->x - 2; j <= activeBlock->x + 1; j++){
-			if (block_data[activeBlock->type][activeBlock->dir] & 1 << ((k * 4) - m)){
-				switch (activeBlock->color){
-				case 1:  al_draw_bitmap(brick_purple, j * 32, i * 32, 0); break;
-				case 2:  al_draw_bitmap(brick_pink, j * 32, i * 32, 0); break;
-				case 3:  al_draw_bitmap(brick_blue, j * 32, i * 32, 0); break;
-				case 4:  al_draw_bitmap(brick_yellow, j * 32, i * 32, 0); break;
-				case 5:  al_draw_bitmap(brick_red, j * 32, i * 32, 0); break;
-				case 6:  al_draw_bitmap(brick_green, j * 32, i * 32, 0); break;
-				case 7:  al_draw_bitmap(brick_orange, j * 32, i * 32, 0); break;
-				}
-			}
-			m++;
-		}
-		k--;
-	}
-}*/
