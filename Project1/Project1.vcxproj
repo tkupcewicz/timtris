@@ -72,9 +72,11 @@
   <ItemGroup>
     <ClCompile Include="block.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="playfield.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="block.h" />
+    <ClInclude Include="playfield.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

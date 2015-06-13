@@ -5,37 +5,20 @@
 #include <time.h>
 #include <stdbool.h>
 #include "block.h"
-
+#include "playfield.h"
 
 Element ***mainMatrix;
+extern int block_data[7][4];
 
-static int block_data[7][4] = {
-	{ 0xF00, 0x2222, 0xF00, 0x2222 }, // I
-	{ 0x660, 0x660, 0x660, 0x660 }, // O
-	{ 0x720, 0x2320, 0x2700, 0x2620 }, // T
-	{ 0x360, 0x2310, 0x360, 0x2310 }, // S
-	{ 0x630, 0x1320, 0x630, 0x1320 }, // Z
-	{ 0x710, 0x3220, 0x4700, 0x2260 }, // J
-	{ 0x740, 0x2230, 0x1700, 0x6220 }  // L
-};
-//
-//
-//		TO DO:
-//		
-//		
-//
-//
-//
-//
-//
 
+/*
 bool is_collision(Element *element, int dx, int dy){
 	int k, m, i, j;
 	k = 4;
 	for (i = element->y - 1; i <= element->y + 2; i++){
 		m = 1;
 		for (j = element->x - 2; j <= element->x + 1; j++){
-			if (block_data[element->type][element->dir] & 1 << k * 4 - m){
+			if (block_data[element->type][element->dir] & 1 << ((k * 4) - m)){
 				if (mainMatrix[i + dy][j + dx]->is_locked == 1){
 					//printf("%d %d is locked\n", i + dy, j + dx);
 					return true;
@@ -46,53 +29,8 @@ bool is_collision(Element *element, int dx, int dy){
 		k--;
 	}
 	return false;
-} 
-
-void moveBrick(Element *activeBlock, int dx, int dy){
-	activeBlock->x = activeBlock->x + dx;
-	activeBlock->y = activeBlock->y + dy;
 }
-
-int checkForLines(){
-	int i, j, k, m, brickCounter, lineCounter;
-	lineCounter = 0;
-	for (i = 19; i >= 0; i--){
-		brickCounter = 0;
-		for (j = 1; j <= 10; j++){
-			if (mainMatrix[i][j]->is_locked == 1){
-				brickCounter++;
-			}
-		}
-		if (brickCounter == 10){
-			for (j = 1; j <= 10; j++){
-				mainMatrix[i][j]->is_locked = 0;
-				mainMatrix[i][j]->color = 0;
-			}
-			lineCounter++;
-			for (k = i; k >= 1; k--){
-				for (m = 1; m <= 10; m++){
-					mainMatrix[k][m]->color = mainMatrix[k - 1][m]->color;
-					mainMatrix[k][m]->is_locked = mainMatrix[k - 1][m]->is_locked;
-				}
-			}
-			i++;
-		}
-		
-	}
-	return lineCounter;
-}
-
-Element  *generateBrick(){
-	Element * tmp;
-	tmp = malloc(sizeof(Element));
-	tmp->x = 5;
-	tmp->y = 1;
-	tmp->type = rand() % 7;
-	tmp->color = tmp->type + 1;
-	tmp->dir = rand() % 4;
-	tmp->is_locked = 0;
-	return tmp;
-}
+*/
 
 enum MYKEYS {
 	KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT
@@ -105,6 +43,7 @@ int main(int argc, char **argv)
 	ALLEGRO_EVENT_QUEUE *event_queue = NULL;
 	ALLEGRO_DISPLAY *display = NULL;
 	ALLEGRO_BITMAP *brick_grey = NULL, *brick_purple = NULL, *brick_pink = NULL, *brick_blue = NULL, *brick_yellow = NULL, *brick_red = NULL, *brick_green = NULL, *brick_orange = NULL;
+	
 	
 	if (!al_init()) {
 		fprintf(stderr, "Failed to initialize allegro!\n");
@@ -180,33 +119,31 @@ int main(int argc, char **argv)
 	}
 
 
-	activeBlock = generateBrick();
+	activeBlock = generateBlock();
 	al_clear_to_color(al_map_rgb(0, 0, 0));
 	bool downKeyDown = false;
 	bool rightKeyDown = false;
 	int keyDelay = 10;
 	int x, k, m, test;
 	while (true){
-		//printf("%d %d\n", activeBlock->x, activeBlock->y);
-		//printf("COLOR: %d\n", activeBlock->color);
 		ALLEGRO_EVENT ev;
 		al_get_next_event(event_queue, &ev);
 		if (ev.type == ALLEGRO_EVENT_KEY_DOWN){
 			switch (ev.keyboard.keycode){
 			case ALLEGRO_KEY_LEFT:
-				if (!is_collision(activeBlock, -1, 0)){
-					moveBrick(activeBlock, -1, 0);
+				if (!is_collision(activeBlock, -1, 0, mainMatrix)){
+					moveBlock(activeBlock, -1, 0);
 				}
 				break;
 			case ALLEGRO_KEY_RIGHT:
-				if (!is_collision(activeBlock, 1, 0)){
-					moveBrick(activeBlock, 1, 0);
+				if (!is_collision(activeBlock, 1, 0, mainMatrix)){
+					moveBlock(activeBlock, 1, 0);
 				}
 				break;
 			case ALLEGRO_KEY_UP:
 				x = activeBlock->dir;
 				activeBlock->dir = (x + 1) % 4;
-				if ((is_collision(activeBlock, 0, 0)) || (is_collision(activeBlock, 0, 0))) activeBlock->dir = x;
+				if ((is_collision(activeBlock, 0, 0, mainMatrix)) || (is_collision(activeBlock, 0, 0, mainMatrix))) activeBlock->dir = x;
 				break;
 			case ALLEGRO_KEY_DOWN:
 				downKeyDown = true;
@@ -229,34 +166,18 @@ int main(int argc, char **argv)
 		if (time_counter > (double)(NUM_SECONDS * CLOCKS_PER_SEC))
 		{
 			time_counter -= (double)(NUM_SECONDS * CLOCKS_PER_SEC);
-			printf("Now\n");
-			if (!is_collision(activeBlock, 0, 1)){
-				printf("X: %d Y: %d", activeBlock->x, activeBlock->y);
-				moveBrick(activeBlock, 0, 1);
+			if (!is_collision(activeBlock, 0, 1, mainMatrix)){
+				moveBlock(activeBlock, 0, 1);
 			}
 			else{
-				k = 4;
-				for (i = activeBlock->y - 1; i <= activeBlock->y + 2; i++){
-					m = 1;
-					for (j = activeBlock->x - 2; j <= activeBlock->x + 1; j++){
-						if (block_data[activeBlock->type][activeBlock->dir] & 1 << k * 4 - m){
-							mainMatrix[i][j]->is_locked = 1;
-							mainMatrix[i][j]->color = activeBlock->color;
-						}
-						m++;
-					}
-					k--;
-				}
+				lockBlock(activeBlock, mainMatrix);
 				downKeyDown = false;
-				test = checkForLines();
-				activeBlock = generateBrick();
-				if (is_collision(activeBlock, 0, 0)){
+				test = checkForLines(mainMatrix);
+				activeBlock = generateBlock();
+				if (is_collision(activeBlock, 0, 0, mainMatrix)){
 					printf("END GAME\n");
 				}
-				//lockedMove = 1;
 			}
-			//else lockedMove = 0;
-		
 		}
 
 		al_clear_to_color(al_map_rgb(0, 0, 0));
@@ -280,7 +201,7 @@ int main(int argc, char **argv)
 		for (i = activeBlock->y - 1; i <= activeBlock->y + 2; i++){
 			m = 1;
 			for (j = activeBlock->x - 2; j <= activeBlock->x + 1; j++){
-				if (block_data[activeBlock->type][activeBlock->dir] & 1 << k * 4 - m){
+				if (block_data[activeBlock->type][activeBlock->dir] & 1 << ((k * 4) - m)){
 					switch (activeBlock->color){
 					case 1:  al_draw_bitmap(brick_purple, j * 32, i * 32, 0); break;
 					case 2:  al_draw_bitmap(brick_pink, j * 32, i * 32, 0); break;
@@ -295,6 +216,8 @@ int main(int argc, char **argv)
 			}
 			k--;
 		}
+
+		void drawBlock(activeBlock, mainMatrix);
 		
 		al_flip_display();
 	}

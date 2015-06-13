@@ -10,7 +10,9 @@ typedef struct {
 	int data;
 } Element;
 
-void generate_block(Element  *element);
+Element *generate_block();
 void rotate_block(Element *element);
-
+void moveBlock(Element *activeBlock, int dx, int dy);
+void lockBlock(Element *activeBlock, Element ***tab);
+//void drawBlock(Element *activeBlock, Element ***tab);
 #endif
