@@ -61,6 +61,35 @@ void drawActiveBlock(Element *block){
 	}
 }
 
+void drawNextBlock(Element *block){
+	//printf("Draw activeBlock\n");
+	int i, j, k, m;
+	k = 4;
+	//printf("%d %d\n", block->x, block->y);
+	for (i = block->y - 1; i <= block->y + 2; i++){
+		m = 1;
+		for (j = block->x - 2; j <= block->x + 1; j++){
+			if (block_data[block->type][block->dir] & 1 << ((k * 4) - m)){
+				switch (block->color){
+				case 1:  al_draw_bitmap(brick_purple, j * 32, i * 32, 0); break;
+				case 2:  al_draw_bitmap(brick_pink, j * 32, i * 32, 0); break;
+				case 3:  al_draw_bitmap(brick_blue, j * 32, i * 32, 0); break;
+				case 4:  al_draw_bitmap(brick_yellow, j * 32, i * 32, 0); break;
+				case 5:  al_draw_bitmap(brick_red, j * 32, i * 32, 0); break;
+				case 6:  al_draw_bitmap(brick_green, j * 32, i * 32, 0); break;
+				case 7:  al_draw_bitmap(brick_orange, j * 32, i * 32, 0); break;
+				}
+			}
+			m++;
+		}
+		k--;
+	}
+}
+
+
+
+
+
 void drawPlayfield(Element ***tab){
 	//printf("Draw playfield\n");
 	int i, j;

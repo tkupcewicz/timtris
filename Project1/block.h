@@ -10,7 +10,7 @@ typedef struct {
 	int data;
 } Element;
 
-//Generowanie nowego klocka
+//Generowanie nowego klocka, domyslnie na pozycji (5,1)
 Element *generate_block();
 
 //Poruszanie sie klockiem w kierunku x y

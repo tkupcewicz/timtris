@@ -19,8 +19,8 @@ void moveBlock(Element *activeBlock, int dx, int dy){
 Element  *generateBlock(){
 	Element * tmp;
 	tmp = malloc(sizeof(Element));
-	tmp->x = 5;
-	tmp->y = 1;
+	tmp->x = 14;
+	tmp->y = 2;
 	tmp->type = rand() % 7;
 	tmp->color = tmp->type + 1;
 	tmp->dir = rand() % 4;
@@ -36,7 +36,6 @@ bool is_collision(Element *element, int dx, int dy, Element ***tab){
 		for (j = element->x - 2; j <= element->x + 1; j++){
 			if (block_data[element->type][element->dir] & 1 << ((k * 4) - m)){
 				if (tab[i + dy][j + dx]->is_locked == 1){
-					//printf("%d %d is locked\n", i + dy, j + dx);
 					return true;
 				}
 			}
